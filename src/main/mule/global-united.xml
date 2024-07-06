@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="bc559c7c-3561-4a12-aad3-be7007d05712" file="global-${env}.yaml" />
+	<global-property doc:name="Global Property" doc:id="8adc1d29-e072-4d9e-b164-0bfd23dc0408" name="env" value="dev" />
+	<http:request-config name="HTTP_Request_configuration_united" doc:name="HTTP Request configuration" doc:id="770f3210-280a-400e-92f5-c59aa912facf" basePath="${united.basepath}" responseTimeout="60000">
+		<http:request-connection protocol="${united.protocol}" host="${united.host}" port="${united.port}" connectionIdleTimeout="60000"/>
+	</http:request-config>
+</mule>

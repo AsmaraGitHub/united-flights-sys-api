@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <http:listener-config name="united-airline-flights-sys-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8082" readTimeout="600000" />
+    </http:listener-config>
+    <apikit:config name="united-airline-flights-sys-api-config" api="resource::ddc2731e-d2a0-4bd1-b2ea-e98f2bf9900f:united-airline-flights-sys-api:1.0.3:raml:zip:united-airline-flights-sys-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="united-airline-flights-sys-api-main">
+        <http:listener config-ref="united-airline-flights-sys-api-httpListenerConfig" path="/united" doc:name="UNITED">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="united-airline-flights-sys-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND" enableNotifications="true" logException="true">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="united-airline-flights-sys-api-console">
+        <http:listener config-ref="united-airline-flights-sys-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="united-airline-flights-sys-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\united:application\json:united-airline-flights-sys-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[
+    {
+        "Airline": "united",
+        "ID": 1,
+        "code": "rree0001",
+        "price": 541,
+        "departureDate": "2016-01-20T00:00:00",
+        "origin": "MUA",
+        "destination": "LAX",
+        "emptySeats": 0,
+        "plane": {
+            "type": "Boeing 787",
+            "totalSeats": 200
+        }
+    },
+    {
+        "Airline": "united",
+        "ID": 2,
+        "code": "eefd0123",
+        "price": 300,
+        "departureDate": "2016-01-25T00:00:00",
+        "origin": "MUA",
+        "destination": "CLE",
+        "emptySeats": 7,
+        "plane": {
+            "type": "Boeing 747",
+            "totalSeats": 345
+        }
+    },
+    {
+        "Airline": "united",
+        "ID": 1,
+        "code": "rree0001",
+        "price": 541,
+        "departureDate": "2016-01-20T00:00:00",
+        "origin": "MUA",
+        "destination": "LAX",
+        "emptySeats": 0,
+        "plane": {
+            "type": "Boeing 787",
+            "totalSeats": 200
+        }
+    },
+    {
+        "Airline": "united",
+        "ID": 2,
+        "code": "eefd0123",
+        "price": 300,
+        "departureDate": "2016-01-25T00:00:00",
+        "origin": "MUA",
+        "destination": "CLE",
+        "emptySeats": 7,
+        "plane": {
+            "type": "Boeing 747",
+            "totalSeats": 345
+        }
+    }
+]]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <logger level="INFO" doc:name="UNITED START" doc:id="38bfa689-75fb-4dd1-95b7-d3662e499b09" message="united START" />
+        <http:request method="GET" doc:name="Request" doc:id="a63743d0-24f7-4776-8cca-fe200cb50b3b" path="${united.path}" config-ref="HTTP_Request_configuration_united">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	 "airline" : "attributes.headers.airline"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[output application/json
+---
+{
+	"trip": true,
+	"connection": false,
+	"round_trip": true
+}]]]></http:query-params>
+        </http:request>
+		<logger level="INFO" doc:name="UNITED END" doc:id="0f0f165f-0dc1-4c3b-862a-73c9f46421dd" message="#[payload]" />
+		<logger level="INFO" doc:name="UNITED END" doc:id="4d6b258a-88dd-438b-8b84-9c581b50a412" message="united end"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="9cafb574-215e-4c05-a1bf-a9be62366101" type="EXPRESSION">
+				<ee:transform doc:name="Transform Message" doc:id="3bce54e7-9307-4fd0-831c-c33d0beadb2a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: {
+    errorType: "media not accepted"
+  }
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+    </flow>
+</mule>
